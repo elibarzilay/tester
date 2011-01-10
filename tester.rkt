@@ -2,10 +2,9 @@
 
 ;; ----------------------------------------------------------------------------
 
-(require racket/foreign racket/list racket/string racket/file racket/match
+(require ffi/unsafe racket/list racket/string racket/file racket/match
          openssl racket/gui/base racket/class framework mrlib/hierlist
          "shared.rkt")
-(unsafe!)
 
 (define (dprintf fmt . args)
   (apply printf fmt args)

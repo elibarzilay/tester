@@ -15,7 +15,7 @@
   [login-mode #t]
   ;; types of password verification, and extra arguments, currently only
   ;; (md5sum <password-file>) is supported
-  [password-verifier (md5sum "passwords.rkt")]
+  [password-verifier (md5sum "passwords.rktd")]
   ;; subdirectories of workdir where content files are found, and client files
   ;; are saved (backup directories are client-dir with a timestamp)
   [content-dir "content"]

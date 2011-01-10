@@ -25,7 +25,7 @@
   (set! options-files (cons (path->complete-path file) options-files)))
 
 ;; use source config by default -- on the client this will include both
-(add-options-file (build-path heredir "config.rkt"))
+(add-options-file (build-path heredir "config.rktd"))
 
 (define none (gensym 'no-default))
 (define (get-opt #:default [default none] . option-path)
