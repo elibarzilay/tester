@@ -1030,6 +1030,8 @@ for your answers and a viewer for files.
 Useful keys:
   F1: toggle this help screen
   F2, F3, F4: cycle the last 2/3/4 files
+    (F2 is very useful for flipping between a question text and your
+    answer)
   Ctrl-Tab: switch focus between the text and the file list areas
   Ctrl-PageDown, Ctrl-PageUp: jump to next/prev file
   Ctrl-f, Ctrl-g: search (as usual in DrRacket)
