@@ -56,12 +56,15 @@
 
 ;; ----------------------------------------------------------------------------
 
+(define windows? (eq? 'windows (system-type)))
+
 (define-syntax defwin
   (syntax-rules ()
     [(defwin name [type ...]) (defwin name #f [type ...])]
     [(defwin name lib [type ...])
      (define name
-       (if app-locked? (get-ffi-obj 'name lib (_fun type ...)) void))]))
+       (if (and app-locked? windows?)
+         (get-ffi-obj 'name lib (_fun type ...)) void))]))
 
 (defwin GetFocus             [-> _int32])
 (defwin GetForegroundWindow  [-> _int32])
@@ -79,7 +82,7 @@
       "<unknown-title>")))
 
 ;; http://www.codeproject.com/KB/winsdk/AntonioWinLock.aspx
-(define winlock (and app-locked? (ffi-lib "WinLockDll.dll")))
+(define winlock (and app-locked? windows? (ffi-lib "WinLockDll.dll")))
 (define-syntax-rule (defwinlock name [type ...])
   (begin (defwin name winlock [type ...])
          (add-locker (lambda (locked?) (name (not locked?))))))
@@ -759,23 +762,30 @@
   (define this-handle #f)
   (define this-thread-id #f)
   (define monitor-thread #f)
+  (define non-windows-alert? (not windows?))
   (define (start-monitor)
     (define (loop)
       (define cur (GetForegroundWindow))
-      (unless (equal? this-handle cur)
-        (let ([title (GetWindowTitle cur)])
-          (if (equal? (GetWindowThreadProcessId cur) this-thread-id)
-            (queue-callback
-             (lambda ()
-               ;; quietly, since this is probably all going to be harmless
-               (send this tell-server 'alert
-                     (format "Lost focus to: ~a, probably same process"
-                             title))))
-            (let ([fg? (SetForegroundWindow this-handle)])
-              (queue-callback
-               (lambda ()
-                 (send this alert "Lost focus to: ~a, ~a" title
-                       (if fg? "got it back" "failed to get it back!"))))))))
+      (cond
+        [(equal? this-handle cur) (void)]
+        [windows?
+         (let ([title (GetWindowTitle cur)])
+           (if (equal? (GetWindowThreadProcessId cur) this-thread-id)
+             (queue-callback
+              (lambda ()
+                ;; quietly, since this is probably all going to be harmless
+                (send this tell-server 'alert
+                      (format "Lost focus to: ~a, probably same process"
+                              title))))
+             (let ([fg? (SetForegroundWindow this-handle)])
+               (queue-callback
+                (lambda ()
+                  (send this alert "Lost focus to: ~a, ~a" title
+                        (if fg? "got it back" "failed to get it back!")))))))]
+        [non-windows-alert?
+         (set! non-windows-alert? #f)
+         (send this tell-server
+               'alert "Not a windows machine, no low-level locking")])
       (sleep 1)
       (when is-locked? (loop)))
     (set! this-handle (send this get-handle))

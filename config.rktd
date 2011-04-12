@@ -57,7 +57,7 @@
   [ask-for-client-id? if-missing]
   ;; store the client-id in a local path (avoid the system temp directory,
   ;; which might not be local); can be () to avoid saving it
-  [id-file-directories ("c:/temp" "c:/tmp")]
+  [id-file-directories ("c:/temp" "c:/tmp" "/tmp")]
   ;; should the client show a clock?  (controlled by the server, so the content
   ;; can be changed dynamically)
   [show-clock? #t]
