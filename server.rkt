@@ -36,7 +36,7 @@ done
 (define verify-password
   (let* ([x (format "passwords-~a.rkt" (car password-verifier))]
          [x (build-path heredir x)]
-         [x (with-handlers ([(lambda (_) #t) (lambda (_) #f)])
+         [x (with-handlers ([(λ (_) #t) (λ (_) #f)])
               (dynamic-require x 'make-verifier))])
     (if x
       (apply x (cdr password-verifier))
@@ -47,7 +47,7 @@ done
 
 (define logger-thread
   (thread
-   (lambda ()
+   (λ ()
      (define log (and logfile (open-output-file logfile #:exists 'append)))
      (define err (and stderr (current-error-port)))
      (let loop ()
@@ -121,7 +121,7 @@ done
 ;; ----------------------------------------------------------------------------
 
 (define-syntax-rule (with-sema sema expr ...)
-  (call-with-semaphore sema (lambda () expr ...)))
+  (call-with-semaphore sema (λ () expr ...)))
 
 (define-struct client (thread ip id username) #:mutable)
 (define clients (make-hash)) ; maps id to client
@@ -159,7 +159,7 @@ done
              [text (and inc? read-text? (file->string path))])
         (and inc? (make-file name list time text))))
     (define (get read-text?)
-      (sort (fold-files (lambda (path kind acc)
+      (sort (fold-files (λ (path kind acc)
                           (if (eq? 'file kind)
                             (let ([file (path->file path read-text?)])
                               (if file (cons file acc) acc))
@@ -207,7 +207,7 @@ done
       (define local
         (if (directory-exists? save-dir)
           (parameterize ([current-directory save-dir])
-            (map (lambda (x) (file->list x '(#t))) (get #t)))
+            (map (λ (x) (file->list x '(#t))) (get #t)))
           '()))
       (define (merge list1 list2)
         (cond [(null? list1) list2]
@@ -241,9 +241,9 @@ done
 (define (filter-content content/diff pred?)
   (cond [(null? content/diff) '()]
         [(symbol? (caar content/diff)) ; filter a diff
-         (filter (lambda (x) (pred? (cadr x))) content/diff)]
+         (filter (λ (x) (pred? (cadr x))) content/diff)]
         [else ; filter a normal content
-         (filter (lambda (x) (pred? (car x))) content/diff)]))
+         (filter (λ (x) (pred? (car x))) content/diff)]))
 (define (editable? path-list) (get-path-option path-list 'editable))
 (define (readonly? path-list) (not (get-path-option path-list 'editable)))
 
@@ -259,15 +259,15 @@ done
 
 (define good-ip?
   (let ([prefix->pred
-         (lambda (pfx)
+         (λ (pfx)
            (let* ([rx (regexp-replace #rx"\\.$" pfx "")]
                   [rx (regexp-replace* #rx"\\." rx "\\\\.")]
                   [rx (regexp (string-append "^" rx "(?:\\.|$)"))])
-             (lambda (ip) (regexp-match? rx ip))))])
-    (cond [(not accept-ips) (lambda (ip) #t)]
+             (λ (ip) (regexp-match? rx ip))))])
+    (cond [(not accept-ips) (λ (ip) #t)]
           [(string? accept-ips) (prefix->pred accept-ips)]
           [else (let ([preds (map prefix->pred accept-ips)])
-                  (lambda (ip) (ormap (lambda (p) (p ip)) preds)))])))
+                  (λ (ip) (ormap (λ (p) (p ip)) preds)))])))
 
 (define (run-client i o)
   (define (error* fmt . args) (raise-user-error (apply format fmt args)))
@@ -353,7 +353,7 @@ done
              (define dir (apply build-path save-dir dirpart))
              (make-directory* dir)
              (call-with-output-file (build-path dir file) #:exists 'replace
-               (lambda (o) (display text o) (flush-output o)))])))
+               (λ (o) (display text o) (flush-output o)))])))
       ;; show messages and possibly act accordingly -- even if not logged in
       ;; (since the client application might send an alert that the controller
       ;; should know about)
@@ -369,7 +369,7 @@ done
           [else (log "*** client sent a bad message: ~e" msg)])))
     (->client (if logged-in? 'ok 'bad-password)))
   ;; don't `set-id!' here; it will show polls and conflict with the real client
-  (with-handlers ([exn? (lambda (e)
+  (with-handlers ([exn? (λ (e)
                           (log "*** client-error: ~a" (exn-message e))
                           (unless exn:fail:user?
                             ((error-display-handler) (exn-message e) e))
@@ -447,10 +447,10 @@ done
   (run-server server-port
               run-client
               #f ; clients should never disconnect
-              (lambda (exn)
+              (λ (exn)
                 (log "connection error: ~a"
                      (if (exn? exn) (exn-message exn) exn)))
-              (lambda (port-k cnt reuse?)
+              (λ (port-k cnt reuse?)
                 (let ([l (ssl-listen port-k cnt #t)])
                   (ssl-load-certificate-chain! l "server-cert.pem")
                   (ssl-load-private-key! l "private-key.pem")
@@ -571,8 +571,7 @@ done
             (match-lambda
              [(list x ...)
               (with-handlers ([exn?
-                               (lambda (e)
-                                 (printf "error: ~a\n" (exn-message e)))])
+                               (λ (e) (printf "error: ~a\n" (exn-message e)))])
                 body ...)]
              [_ no-match])])
        (set! commands (cons (make-command form help handler) commands)))]
@@ -638,7 +637,7 @@ done
 (define-match-expander on/off
   (syntax-rules ()
     [(_ x)
-     (app (lambda (x) (list x (equal? x "on"))) (list (or "on" "off") x))]))
+     (app (λ (x) (list x (equal? x "on"))) (list (or "on" "off") x))]))
 
 (defcommand/send-to ("tell" msg ...)
   "show a message on client"
@@ -694,7 +693,7 @@ done
                    (define client-dir ,client-dir)
                    ,(file->string
                      (build-path heredir "netboot-template.rktl")))]
-           [text (map (lambda (x) (if (string? x) x (format "~s" x))) text)]
+           [text (map (λ (x) (if (string? x) x (format "~s" x))) text)]
            [text (string-append* (add-between text "\n"))])
       text))
   (define (generate-racket)
@@ -702,12 +701,10 @@ done
   (define (generate-batch)
     (let* ([racket-file (regexp-replace #rx"[.][^.]+$" file ".rkt")]
            [text (regexp-match* #rx"[^\n]+" text)]
-           [text (map (lambda (x)
-                        (string-append "echo " (echo-quote x)
-                                       ">> " racket-file))
+           [text (map (λ (x) (string-append "echo " (echo-quote x)
+                                            ">> " racket-file))
                       text)]
-           [execN (let ([n 0])
-                    (lambda () (set! n (add1 n)) (format "EXEC~a" n)))]
+           [execN (let ([n 0]) (λ () (set! n (add1 n)) (format "EXEC~a" n)))]
            [text
             `("@echo off"
               ,@(if (null? batch-prefix) `() `("" ,@batch-prefix))
@@ -720,7 +717,7 @@ done
               ""
               ,@text
               ""
-              ,@(append-map (lambda (p)
+              ,@(append-map (λ (p)
                               (define label (execN))
                               `(("if not exist \"~a\" goto ~a" ,p ,label)
                                 ("  \"~a\" \"~a\"" ,p ,racket-file)
@@ -728,8 +725,7 @@ done
                                 (":~a" ,label)))
                             gracket-paths)
               "  echo ERROR: No gracket-text.exe executable found, tried:"
-              ,@(map (lambda (p) `("  echo ... ~a" ,(echo-quote p)))
-                     gracket-paths)
+              ,@(map (λ (p) `("  echo ... ~a" ,(echo-quote p))) gracket-paths)
               ":EXECDONE"
               ""
               "sleep 1"
@@ -749,7 +745,7 @@ done
 
 (define (controller)
   (when prompt (display prompt) (flush-output))
-  (with-handlers ([exn:break? (lambda (_) (printf "aborting...\n"))])
+  (with-handlers ([exn:break? (λ (_) (printf "aborting...\n"))])
     (let ([line (read-line)])
     (when (string? line)
       (log 'file "controller: ~a" line)

@@ -34,25 +34,25 @@
         (set! is-locked? b)))))
 
 (add-locker
- (lambda (lock?)
+ (λ (lock?)
    (dprintf "~aing application globally\n" (if lock? 'Lock 'Unlock))))
 
 (let ([o (exit-handler)])
-  (exit-handler (lambda xs
+  (exit-handler (λ xs
                   (dprintf "Shutting down process...\n")
                   (set-global-locked-mode! #f)
                   (apply o xs))))
 
 (let ([old (uncaught-exception-handler)])
   (uncaught-exception-handler
-   (lambda (e)
+   (λ (e)
      ((error-display-handler) (exn-message e) e)
      (fprintf (current-error-port) "Aborting!\n")
      (exit 1)
      (old e)))) ; just in case
 
 ;; make the framework do it too, just in case
-(void (exit:insert-on-callback (lambda () (set-global-locked-mode! #f))))
+(void (exit:insert-on-callback (λ () (set-global-locked-mode! #f))))
 
 ;; ----------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@
 (define winlock (and app-locked? windows? (ffi-lib "WinLockDll.dll")))
 (define-syntax-rule (defwinlock name [type ...])
   (begin (defwin name winlock [type ...])
-         (add-locker (lambda (locked?) (name (not locked?))))))
+         (add-locker (λ (locked?) (name (not locked?))))))
 ;; This one is problematic
 ;; (defwinlock Desktop_Show_Hide            [_bool -> _void])
 (defwinlock StartButton_Show_Hide        [_bool -> _void])
@@ -104,7 +104,7 @@
 ;; (define (ToggleDesktop)
 ;;   (define file (make-temporary-file "~a.scf"))
 ;;   (call-with-output-file file #:exists 'truncate
-;;     (lambda (o)
+;;     (λ (o)
 ;;       (display #"[Shell]\r\nCommand = 2\r\nIconFile=explorer.exe,3\r\n" o)
 ;;       (display #"[Taskbar]\r\nCommand = ToggleDesktop\r\n" o)))
 ;;   (shell-execute #f (path->string file) "" (current-directory) 'sw_hide)
@@ -117,7 +117,7 @@
                                [pvParam  : _pointer]
                                [fWinIni  : _uint]
                                -> _bool])
-(add-locker (lambda (locked?)
+(add-locker (λ (locked?)
               (SystemParametersInfoA 17 ; SPI_SETSCREENSAVEACTIVE
                                      (if locked? 0 1)
                                      #f
@@ -134,7 +134,7 @@
       (for/or ([dir (in-list id-file-directories)])
         (let ([file (build-path dir client-id-file)])
           (and (file-exists? file)
-               (with-handlers ([exn? (lambda (_) #f)])
+               (with-handlers ([exn? (λ (_) #f)])
                  (call-with-input-file file read-line)))))))
 (define (save-client-id id)
   (define file
@@ -147,12 +147,11 @@
         ;; (error 'save-client-id "could not find a directory to save in")
         ))
   (when file
-    (call-with-output-file file #:exists 'truncate
-      (lambda (o) (display id o)))))
+    (call-with-output-file file #:exists 'truncate (λ (o) (display id o)))))
 
 (define (make-hasher fun)
   (define t (make-hash))
-  (lambda (xs) (hash-ref! t xs (lambda () (fun xs)))))
+  (λ (xs) (hash-ref! t xs (λ () (fun xs)))))
 
 (define spec->font
   (make-hasher (match-lambda
@@ -161,7 +160,7 @@
 
 (define spec->color
   (make-hasher
-   (lambda (color)
+   (λ (color)
      (apply make-object color% (if (list? color) color (list color))))))
 
 (define spec->style
@@ -179,7 +178,7 @@
 
 (define fgcolor->style
   (make-hasher
-   (lambda (fgcolor)
+   (λ (fgcolor)
      (let ([st (make-object style-delta% 'change-nothing)])
        (send st set-delta-foreground (spec->color fgcolor))
        st))))
@@ -196,9 +195,9 @@
 (define (reset-preferences)
   (define t (make-hasheq))
   (preferences:low-level-get-preference
-   (lambda (sym [dflt (lambda () #f)]) (hash-ref t sym dflt)))
+   (λ (sym [dflt (λ () #f)]) (hash-ref t sym dflt)))
   (preferences:low-level-put-preferences
-   (lambda (prefs vals)
+   (λ (prefs vals)
      (for ([pref (in-list prefs)] [val (in-list vals)])
        (hash-set! t pref val))))
   ;; set some defaults: no exit quesion, anchored search
@@ -505,8 +504,8 @@
     (sync input-evt)
     (let ([s (make-semaphore 0)])
       (queue-callback
-       (lambda ()
-         (read-line (lambda (line)
+       (λ ()
+         (read-line (λ (line)
                       (when line (input-callback line))
                       (semaphore-post s))
                     "> ")))
@@ -519,9 +518,9 @@
     ;; note: playing with reading-enabled is dangerous, since it can
     ;; make `enable-input' block on `input-sema'
     (set! reading-enabled #t)
-    (read-line (lambda (username)
+    (read-line (λ (username)
                  (if username
-                   (read-line (lambda (password)
+                   (read-line (λ (password)
                                 (set! reading-enabled was-enabled?)
                                 (when password (callback username password)))
                               "password: " #t)
@@ -546,7 +545,7 @@
       (set! cached-fringe
             ((compose list->vector flatten)
              (let loop ([parent this])
-               (map (lambda (i) (if (is-list? i) (cons i (loop i)) i))
+               (map (λ (i) (if (is-list? i) (cons i (loop i)) i))
                     (send parent get-items))))))
     cached-fringe)
   (define/private (select-next inc only-items?)
@@ -613,13 +612,13 @@
     (define frame (send editor get-frame))
     (hash-ref!
      tree rpath
-     (lambda ()
+     (λ ()
        (when (pair? path)
          (add* 'item
                (let loop ([rp (cdr rpath)])
                  (hash-ref!
                   tree rp
-                  (lambda ()
+                  (λ ()
                     (add* 'list (loop (cdr rp)) (car rp)
                           (new fixed-text% [path (reverse rp)] [frame frame])
                           toc-item-style))))
@@ -642,9 +641,9 @@
     (if (is-a? i hierarchical-list-compound-item<%>)
       (begin (send i toggle-open/closed)
              (send i set-allow-selection #f)
-             (queue-callback (lambda () (send i set-allow-selection #t))))
+             (queue-callback (λ () (send i set-allow-selection #t))))
       (queue-callback
-       (lambda () (send (send (send i user-data) get-frame) focus-editor)))))
+       (λ () (send (send (send i user-data) get-frame) focus-editor)))))
   ;; hack2: make hack1 work
   (send this on-click-always #t)
   ;; hack3: double clicking a list is like two clicks
@@ -661,7 +660,7 @@
         (send i select #f)
         (send this allow-deselect ad?))))
   (define/override (sort)
-    (super sort (lambda (i1 i2)
+    (super sort (λ (i1 i2)
                   (path-list<? (send (send i1 user-data) get-path)
                                (send (send i2 user-data) get-path)))))
   (define/public (begin-edit-sequence)
@@ -699,7 +698,7 @@
                  [pos (send interaction get-end-position)])
              (send interaction output (string-append sep "\n" text sep))
              (queue-callback
-              (lambda ()
+              (λ ()
                 (send interaction scroll-to-position pos)
                 (sleep/yield 0.25)
                 (send interaction scroll-to-position pos))
@@ -772,14 +771,14 @@
          (let ([title (GetWindowTitle cur)])
            (if (equal? (GetWindowThreadProcessId cur) this-thread-id)
              (queue-callback
-              (lambda ()
+              (λ ()
                 ;; quietly, since this is probably all going to be harmless
                 (send this tell-server 'alert
                       (format "Lost focus to: ~a, probably same process"
                               title))))
              (let ([fg? (SetForegroundWindow this-handle)])
                (queue-callback
-                (lambda ()
+                (λ ()
                   (send this alert "Lost focus to: ~a, ~a" title
                         (if fg? "got it back" "failed to get it back!")))))))]
         [non-windows-alert?
@@ -840,12 +839,12 @@
       saved))
   ;;
   (define-syntax-rule (callback msg . args)
-    (queue-callback (lambda () (send this msg . args))))
+    (queue-callback (λ () (send this msg . args))))
   ;;
   (define teller-thread
     (thread*
      (let ([messages '()])
-       (lambda ()
+       (λ ()
          (let loop ()
            (match (thread-receive)
              [(and (cons (or 'message 'alert 'login 'quit) _) msg)
@@ -880,7 +879,7 @@
   (define (communicator)
     (define close-ports void)
     (with-handlers ([exn?
-                     (lambda (e)
+                     (λ (e)
                        (define msg (exn-message e))
                        (close-ports)
                        (callback alert #f "Disconnected: ~a" msg)
@@ -897,7 +896,7 @@
                                    (ssl-connect server-name server-port))])
           (callback status "Connected to server")
           (set! close-ports
-                (lambda () (close-input-port i) (close-output-port o)))
+                (λ () (close-input-port i) (close-output-port o)))
           (values i o)))
       (define ->server (make-writer o))
       (define server-> (make-reader i read-timeout))
@@ -912,7 +911,7 @@
         (set! need-password? #t)
         (set! username #f) (set! password #f) ; so we know that we're reading
         (callback read-username+password msg
-                  (lambda (user pswd)
+                  (λ (user pswd)
                     (set! username user)
                     (set! password pswd)
                     (tell-server 'login))))
@@ -991,7 +990,7 @@
                   [diff (begin (callback get-diffs dch) (channel-get dch))])
              (define (ch-reply m d) (channel-put mch m) (channel-put dch d))
              (define reply
-               (with-handlers ([exn? (lambda (e) (ch-reply #f #f) (raise e))])
+               (with-handlers ([exn? (λ (e) (ch-reply #f #f) (raise e))])
                  (->server (make-pong uptime messages diff username password))
                  (let ([r (server->)])
                    (case r
@@ -1142,11 +1141,11 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define (add-view-menu)
     (define m (new menu% [parent (send this get-menu-bar)] [label "&View"]))
     (new menu-item% [parent m] [label "&Bigger"] [shortcut #\+]
-         [callback (lambda (m c) (font-size-add +1))])
+         [callback (λ (m c) (font-size-add +1))])
     (new menu-item% [parent m] [label "&Smaller"] [shortcut #\-]
-         [callback (lambda (m c) (font-size-add -1))])
+         [callback (λ (m c) (font-size-add -1))])
     (new checkable-menu-item% [parent m] [label "Bol&d"] [checked #t]
-         [callback (lambda (m c) (font-set-bold (send m is-checked?)))])
+         [callback (λ (m c) (font-set-bold (send m is-checked?)))])
     (set! the-font-delta (make-object style-delta% 'change-family 'modern))
     (set! the-standard-style (send (send (get-editor) get-style-list)
                                    find-named-style "Standard"))
@@ -1219,7 +1218,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
           (set! pre-item #f)))
       (define (toggle)
         (if (eq? (get-editor) editor) (switch-back) (switch-to)))
-      (lambda (m)
+      (λ (m)
         (unless editor (set! editor make-editor-expr))
         (case m
           [(toggle) (toggle)]
@@ -1240,8 +1239,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
       (set! current-editor editor)
       (add-to-history editor)
       ;; need to switch focus for update-info to work
-      (call-preserving-focus
-       (lambda () (focus-editor) (send this update-info)))))
+      (call-preserving-focus (λ () (focus-editor) (send this update-info)))))
   (define/public (delete-editables)
     (send toc-list delete-editables))
   ;; getting content from the server
@@ -1251,7 +1249,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define/public (set-content content) (update-content* content))
   (define/public (diff-content diff)
     (let-values ([(deleted new)
-                  (partition (lambda (x) (eq? 'deleted (car x))) diff)])
+                  (partition (λ (x) (eq? 'deleted (car x))) diff)])
       ;; treat added and changed files the same, `update-content' will notice
       ;; no-changes anyway
       (update-content* (map cdr new) (map cadr deleted))))
@@ -1278,7 +1276,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
            [clk (and show-clock? (new message% [parent info] [label "??:?? "]
                                       [font (spec->font clock-font)]))])
       (send info change-children
-            (lambda (l)
+            (λ (l)
               (let* ([l (remq* (list msg clk) l)]
                      [l (if clk (cons clk l) l)])
                 (cons msg l))))
@@ -1290,14 +1288,14 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define interaction-editor #f)
   (define/public (enable-messages b?)
     (send interaction-editor enable-input
-          (and b? (lambda (line) (send this tell-server 'message line)))))
+          (and b? (λ (line) (send this tell-server 'message line)))))
   (define/public (cancel-reader) (send interaction-editor cancel-reader))
   (define/public (read-username+password message callback)
     (send* interaction-editor (output message alert-color)
                               (read-username+password callback)))
   (define status-off-timer
     (new timer% [notify-callback
-                 (lambda () (send status-message set-label ""))]))
+                 (λ () (send status-message set-label ""))]))
   (define/public (status* color fmt . args)
     (send status-off-timer stop)
     (send status-off-timer start 5000 #t)
@@ -1323,10 +1321,10 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
     (define str*
       (if ((string-length str) . > . 200) (substring str 0 200) str))
     (define (show s)
-      (queue-callback (lambda () (send status-message set-label s))))
+      (queue-callback (λ () (send status-message set-label s))))
     (status* 'message "~a" str)
     (unless (eq? interaction-editor (get-editor))
-      (thread (lambda ()
+      (thread (λ ()
                 (let ([hi 0.1])
                   (for ([i (in-range 0.0 hi 0.01)])
                     (sleep i) (show "") (sleep (- hi i)) (show str*)))))))
@@ -1363,7 +1361,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
     (when restart?
       (set! restart? #f)
       (parameterize ([exit-handler
-                      (lambda xs (if restart? (loop) (apply exit xs)))])
+                      (λ xs (if restart? (loop) (apply exit xs)))])
         (reset-preferences)
         (set-global-locked-mode! #f)
         (send (new tester-frame%) start)

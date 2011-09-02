@@ -34,7 +34,7 @@
     (cond [(null? path)
            (if (= 1 (length options)) (car options) (err))]
           [(assq (car path) options)
-           => (lambda (more)
+           => (λ (more)
                 (if (pair? more) (search (cdr path) (cdr more)) (err)))]
           [else none]))
   (let loop ([options options])
@@ -109,7 +109,7 @@
          (if (eq? option (car options))
            (cadr options)
            (getopt (cddr options)))))
-  (ormap (lambda (s+o)
+  (ormap (λ (s+o)
            (and (or (equal? '(*) (car s+o)) ; optimize common case
                     (matching? (car s+o) path))
                 (getopt (cdr s+o))))
@@ -117,15 +117,15 @@
 
 (define get-path-option
   (let ([t (make-hasheq)])
-    (lambda (path option)
-      (hash-ref! (hash-ref! t option (lambda () (make-hash))) path
-                 (lambda () (get-path-option* path option))))))
+    (λ (path option)
+      (hash-ref! (hash-ref! t option (λ () (make-hash))) path
+                 (λ () (get-path-option* path option))))))
 
 (define string->natural-list
   (let ([t (make-weak-hash)])
-    (lambda (s)
+    (λ (s)
       (hash-ref! t s
-        (lambda ()
+        (λ ()
           (let loop ([ms (regexp-match-positions* #rx"[0-9]+" s)] [i 0])
             (if (null? ms)
               (list (substring s i))
@@ -144,9 +144,9 @@
 
 (define path-list<?
   (let ([t (make-hash)])
-    (lambda (l1 l2)
+    (λ (l1 l2)
       (hash-ref! t (list l1 l2)
-        (lambda ()
+        (λ ()
           (let loop ([l1 l1] [l2 l2] [rpath '()])
             (cond
               [(null? l2) #f]
@@ -154,9 +154,8 @@
               [(equal? (car l1) (car l2))
                (loop (cdr l1) (cdr l2) (cons (car l1) rpath))]
               [else
-               (let* ([get (lambda (x key)
-                             (get-path-option
-                              (reverse (cons x rpath)) key))]
+               (let* ([get (λ (x key)
+                             (get-path-option (reverse (cons x rpath)) key))]
                       [x1 (car l1)]               [x2 (car l2)]
                       [o1 (or (get x1 'order) 0)] [o2 (or (get x2 'order) 0)]
                       [c1 (get x1 'comparator)]   [c2 (get x2 'comparator)]
@@ -185,16 +184,16 @@
   ;; use a list to easily distinguish it from the timeout's #f; and use two
   ;; channels to make it possible to read from multiple threads
   (define reader-thread
-    (thread (lambda ()
+    (thread (λ ()
               (define (read*)
                 (if limit
                   (with-handlers ([exn:fail:read:eof?
-                                   (lambda (e) (error* "input overflow"))])
+                                   (λ (e) (error* "input overflow"))])
                     (read (make-limited-input-port i (* 1024 limit) #t)))
                   (read i)))
               (define ch2 (make-channel))
               (let loop () ; two loops so we can have a single with-handlers
-                (with-handlers ([exn? (lambda (e) (channel-put ch2 e) (loop))])
+                (with-handlers ([exn? (λ (e) (channel-put ch2 e) (loop))])
                   (let loop ()
                     (channel-put ch ch2)
                     (channel-put ch2 (list (read*)))
