@@ -133,15 +133,15 @@
 (define (get-saved-client-id)
   (or global-client-id
       (for/or ([dir (in-list id-file-directories)])
-        (let ([file (build-path dir client-id-file)])
-          (and (file-exists? file)
-               (with-handlers ([exn? (λ (_) #f)])
-                 (call-with-input-file file read-line)))))))
+        (define file (build-path dir client-id-file))
+        (and (file-exists? file)
+             (with-handlers ([exn? (λ (_) #f)])
+               (call-with-input-file file read-line))))))
 (define (save-client-id id)
   (define file
     (or (for/or ([dir (in-list id-file-directories)])
-          (let ([file (build-path dir client-id-file)])
-            (and (file-exists? file) file)))
+          (define file (build-path dir client-id-file))
+          (and (file-exists? file) file))
         (for/or ([dir (in-list id-file-directories)])
           (and (directory-exists? dir) (build-path dir client-id-file)))
         ;; if there is no place to save it, then just don't save it
@@ -168,25 +168,25 @@
   (make-hasher
    (match-lambda
     [(list size family style weight bgcolor)
-     (let ([st (if size
-                 (make-object style-delta% 'change-size size)
-                 (make-object style-delta% 'change-nothing))])
-       (when family (send st set-family family))
-       (when style  (send st set-style-on style))
-       (when weight (send st set-weight-on weight))
-       (when bgcolor (send st set-delta-background (spec->color bgcolor)))
-       st)])))
+     (define st (if size
+                  (make-object style-delta% 'change-size size)
+                  (make-object style-delta% 'change-nothing)))
+     (when family (send st set-family family))
+     (when style  (send st set-style-on style))
+     (when weight (send st set-weight-on weight))
+     (when bgcolor (send st set-delta-background (spec->color bgcolor)))
+     st])))
 
 (define fgcolor->style
   (make-hasher
    (λ (fgcolor)
-     (let ([st (make-object style-delta% 'change-nothing)])
-       (send st set-delta-foreground (spec->color fgcolor))
-       st))))
+     (define st (make-object style-delta% 'change-nothing))
+     (send st set-delta-foreground (spec->color fgcolor))
+     st)))
 
 (define threads '())
 (define (thread* thunk)
-  (let ([t (thread thunk)]) (set! threads (cons t threads)) t))
+  (define t (thread thunk)) (set! threads (cons t threads)) t)
 (define (kill-threads)
   (for ([t (begin0 threads (set! threads '()))]) (kill-thread t)))
 
@@ -251,23 +251,23 @@
     ;; no resetting of text if the file is local, except when initializing
     (when (or text (not local?))
       (set! text #t) ; ensure that we don't report this as a modification
-      (let ([cur (send this get-text)]
-            [locked? (send this is-locked?)])
-        (unless (equal? cur newtext)
-          (set! allow-edits #t)
-          (send* this
-                 (begin-edit-sequence)
-                 (lock #f)
-                 (erase)
-                 (insert newtext)
-                 (set-position 0)
-                 (clear-undos)
-                 (lock locked?)
-                 (set-modified #f)
-                 (end-edit-sequence))
-          (set! allow-edits #f)
-          (set! curseen? (eq? this (send frame get-editor)))
-          (refresh-label-color)))
+      (define cur (send this get-text))
+      (define locked? (send this is-locked?))
+      (unless (equal? cur newtext)
+        (set! allow-edits #t)
+        (send* this
+               (begin-edit-sequence)
+               (lock #f)
+               (erase)
+               (insert newtext)
+               (set-position 0)
+               (clear-undos)
+               (lock locked?)
+               (set-modified #f)
+               (end-edit-sequence))
+        (set! allow-edits #f)
+        (set! curseen? (eq? this (send frame get-editor)))
+        (refresh-label-color))
       (set! text #f)))
   ;; set the color of the label for this text
   (define/public (get-label-color)
@@ -278,12 +278,12 @@
   (define label-color "black")
   (define/public (refresh-label-color)
     (when item
-      (let ([c (get-label-color)])
-        (unless (equal? c label-color)
-          (let ([e (and item (send item get-editor))])
-            (when e (send e change-style
-                          (fgcolor->style c) 0 (send e last-position))))
-          (set! label-color c)))))
+      (define c (get-label-color))
+      (unless (equal? c label-color)
+        (define e (and item (send item get-editor)))
+        (when e
+          (send e change-style (fgcolor->style c) 0 (send e last-position)))
+        (set! label-color c))))
   ;; read-only stuff (with an override switch)
   (define allow-edits #f)
   (define/override (blink-caret) (when edit? (super blink-caret)))
@@ -310,12 +310,12 @@
   ;; make the default behavior for control/alt-key do nothing instead of
   ;; inserting the key
   (define/override (on-default-char e)
-    (let ([c (send e get-key-code)])
-      (when (or (eq? 'release c)
-                (not (or (send e get-control-down)
-                         (send e get-alt-down)
-                         (send e get-meta-down))))
-        (super on-default-char e))))
+    (define c (send e get-key-code))
+    (when (or (eq? 'release c)
+              (not (or (send e get-control-down)
+                       (send e get-alt-down)
+                       (send e get-meta-down))))
+      (super on-default-char e)))
   ;; scroll on space if read-only
   (define/override (on-local-char e)
     (if (and (not edit?) (eq? #\space (send e get-key-code)))
@@ -332,31 +332,31 @@
            get-visible-line-range scroll-to-position
            line-start-position line-end-position)
   (define/public (save-position)
-    (let ([bs (box 0)] [be (box 0)] [bt (box 0)] [bb (box 0)])
-      (get-visible-line-range bt bb #f)
-      (get-position bs be)
-      (let* ([s     (unbox bs)]
-             [e     (unbox be)]
-             [same? (= s e)]
-             [last? (and same? (= s (last-position)))]
-             [ls    (line-start-position (unbox bt))]
-             [le    (line-end-position (unbox bb))])
-        (set! saved-positions
-              (cons (list (if last? 'last s) (if same? 'same e)
-                          ls le (<= ls s e le))
-                    saved-positions)))))
+    (define bs (box 0)) (define be (box 0))
+    (define bt (box 0)) (define bb (box 0))
+    (get-visible-line-range bt bb #f)
+    (get-position bs be)
+    (define s (unbox bs)) (define e (unbox be))
+    (define same? (= s e))
+    (define last? (and same? (= s (last-position))))
+    (define ls (line-start-position (unbox bt)))
+    (define le (line-end-position (unbox bb)))
+    (set! saved-positions
+          (cons (list (if last? 'last s) (if same? 'same e)
+                      ls le (<= ls s e le))
+                saved-positions)))
   (define/public (restore-position)
     (when (pair? saved-positions) ; just ignore restore with no save
-      (let ([p (car saved-positions)])
-        (define (set-pos scroll?)
-          (if (eq? 'last (car p))
-            (set-position (last-position) 'same #f scroll?)
-            (set-position (car p) (cadr p) #f scroll?)))
-        (set! saved-positions (cdr saved-positions))
-        (set-pos #f)
-        (scroll-to-position (caddr p) #f (cadddr p) 'start)
-        ;; make the end visible if it was visible
-        (when (car (cddddr p)) (set-pos #t)))))
+      (define p (car saved-positions))
+      (define (set-pos scroll?)
+        (if (eq? 'last (car p))
+          (set-position (last-position) 'same #f scroll?)
+          (set-position (car p) (cadr p) #f scroll?)))
+      (set! saved-positions (cdr saved-positions))
+      (set-pos #f)
+      (scroll-to-position (caddr p) #f (cadddr p) 'start)
+      ;; make the end visible if it was visible
+      (when (car (cddddr p)) (set-pos #t))))
   ;; initialization: set text, mode (the default is scheme mode), undo
   (when text (set-all-text text))
   (send this set-surrogate
@@ -390,8 +390,7 @@
       [(_ start) (and reading reading-enabled (start . >= . read-point))]))
   ;;
   (define-syntax-rule (allow-output body ...)
-    (let ([lock? (send this is-locked?)]
-          [out?  outputting])
+    (let ([lock? (send this is-locked?)] [out? outputting])
       (set! outputting #t)
       (send this lock #f)
       body ...
@@ -432,13 +431,12 @@
   ;; canceling a reader
   (define/public (cancel-reader)
     (when reading
-      (let ([cb reading])
-        (set! reading #f)
-        (set! hidden-input #f)
-        (set! read-point prompt-point)
-        (allow-output (send this delete
-                            prompt-point (send this last-position)))
-        (cb #f))))
+      (define cb reading)
+      (set! reading #f)
+      (set! hidden-input #f)
+      (set! read-point prompt-point)
+      (allow-output (send this delete prompt-point (send this last-position)))
+      (cb #f)))
   ;; deal with enter
   (define (is-enter? e)
     (define c (send e get-key-code))
@@ -497,21 +495,21 @@
   (define input-evt (semaphore-peek-evt input-sema))
   (define/public (enable-input callback)
     (set! input-callback callback)
-    (let ([enable? (and callback #t)])
-      (unless (equal? enable? reading-enabled)
-        (set! reading-enabled enable?)
-        ((if enable? semaphore-post semaphore-wait) input-sema))))
+    (define enable? (and callback #t))
+    (unless (equal? enable? reading-enabled)
+      (set! reading-enabled enable?)
+      ((if enable? semaphore-post semaphore-wait) input-sema)))
   (define (input-loop)
     (sync input-evt)
-    (let ([s (make-semaphore 0)])
-      (queue-callback
-       (λ ()
-         (read-line (λ (line)
-                      (when line (input-callback line))
-                      (semaphore-post s))
-                    "> ")))
-      (semaphore-wait s)
-      (input-loop)))
+    (define s (make-semaphore 0))
+    (queue-callback
+     (λ ()
+       (read-line (λ (line)
+                    (when line (input-callback line))
+                    (semaphore-post s))
+                  "> ")))
+    (semaphore-wait s)
+    (input-loop))
   (thread* input-loop)
   ;; username/password reader
   (define/public (read-username+password callback)
@@ -563,29 +561,28 @@
            ;; opened all the way to the top
            (let loop ([p (send item get-parent)])
              (or (not p) (and (send p is-open?) (loop (send p get-parent)))))))
-    (let* ([fringe     (get-fringe)]
-           [fringe-len (vector-length fringe)]
-           [n (and current (for/or ([x (in-vector fringe)] [i (in-naturals 0)])
-                                   (and (eq? current x) i)))]
-           [n (if n
-                (min (sub1 fringe-len) (max 0 (inc n)))
-                (modulo (inc fringe-len) (add1 fringe-len)))])
-      ;; need to choose item n, but go on looking for one that is selectable
-      ;; and open
-      (let loop ([n n])
-        (when (< -1 n fringe-len)
-          (let ([item (vector-ref fringe n)])
-            (if (selectable? item) (choose item) (loop (inc n))))))))
+    (define fringe     (get-fringe))
+    (define fringe-len (vector-length fringe))
+    (define n (and current (for/or ([x (in-vector fringe)] [i (in-naturals 0)])
+                             (and (eq? current x) i))))
+    ;; need to choose item n, but go on looking for one that is selectable and
+    ;; open
+    (let loop ([n (if n
+                    (min (sub1 fringe-len) (max 0 (inc n)))
+                    (modulo (inc fringe-len) (add1 fringe-len)))])
+      (when (< -1 n fringe-len)
+        (define item (vector-ref fringe n))
+        (if (selectable? item) (choose item) (loop (inc n))))))
   (define/override (on-char evt)
-    (let ([code (send evt get-key-code)])
-      (case code
-        [(up)   (select-next sub1 #f)]
-        [(down) (select-next add1 #f)]
-        ;; right key is fine, but nicer to close after a left
-        [(left) (super on-char evt)
-                (let ([s (send this get-selected)])
-                  (when (and s (is-list? s)) (send s close)))]
-        [else (super on-char evt)])))
+    (define code (send evt get-key-code))
+    (case code
+      [(up)   (select-next sub1 #f)]
+      [(down) (select-next add1 #f)]
+      ;; right key is fine, but nicer to close after a left
+      [(left) (super on-char evt)
+              (let ([s (send this get-selected)])
+                (when (and s (is-list? s)) (send s close)))]
+      [else (super on-char evt)]))
   (define/public (jump-to-prev) (select-next sub1 #t))
   (define/public (jump-to-next) (select-next add1 #t)))
 
@@ -593,16 +590,16 @@
   (super-new)
   (send this show-focus #t)
   (define (add* kind parent name editor stylespec)
-    (let* ([list? (eq? 'list kind)]
-           [i (if list? (send parent new-list) (send parent new-item))])
-      (send this clear-fringe-cache)
-      (send* (send i get-editor)
-             (change-style (spec->style stylespec))
-             (insert (format (if list? "<~a>" " ~a ") name)))
-      (send i user-data editor)
-      (when list? (send i open))
-      (send* editor (set-item! i) (refresh-label-color))
-      i))
+    (define list? (eq? 'list kind))
+    (define i (if list? (send parent new-list) (send parent new-item)))
+    (send this clear-fringe-cache)
+    (send* (send i get-editor)
+           (change-style (spec->style stylespec))
+           (insert (format (if list? "<~a>" " ~a ") name)))
+    (send i user-data editor)
+    (when list? (send i open))
+    (send* editor (set-item! i) (refresh-label-color))
+    i)
   (define tree (make-hash)) ; map reversed paths to editors
   (hash-set! tree '() this)
   (define/public (path->item path)
@@ -626,17 +623,17 @@
                (car rpath) editor (get-path-option path 'style))))))
   (define/public (delete-path path)
     (let loop ([rpath (reverse path)])
-      (let* ([i      (hash-ref tree rpath #f)]
-             [parent (and i (hash-ref tree (cdr rpath) #f))])
-        (when i
-          (send (or parent this) delete-item i)
-          (hash-remove! tree rpath)
-          (when (and parent (null? (send parent get-items)))
-            (loop (cdr rpath)))))))
+      (define i      (hash-ref tree rpath #f))
+      (define parent (and i (hash-ref tree (cdr rpath) #f)))
+      (when i
+        (send (or parent this) delete-item i)
+        (hash-remove! tree rpath)
+        (when (and parent (null? (send parent get-items)))
+          (loop (cdr rpath))))))
   (define/public (delete-editables)
     (for ([i (in-vector (send this get-fringe))])
-      (let ([e (send i user-data)])
-        (when (send e is-editable?) (delete-path (send e get-path))))))
+      (define e (send i user-data))
+      (when (send e is-editable?) (delete-path (send e get-path)))))
   ;; hack1: avoid selecting a list when clicked
   (define/override (on-click i)
     (if (is-a? i hierarchical-list-compound-item<%>)
@@ -654,12 +651,12 @@
   (define/override (on-select i)
     (when i (send (send i user-data) on-select)))
   (define/public (unselect)
-    (let ([i (send this get-selected)]
-          [ad? (send this allow-deselect)])
-      (when i
-        (send this allow-deselect #t)
-        (send i select #f)
-        (send this allow-deselect ad?))))
+    (define i (send this get-selected))
+    (define ad? (send this allow-deselect))
+    (when i
+      (send this allow-deselect #t)
+      (send i select #f)
+      (send this allow-deselect ad?)))
   (define/override (sort)
     (super sort (λ (i1 i2)
                   (path-list<? (send (send i1 user-data) get-path)
@@ -669,9 +666,9 @@
   (define/public (end-edit-sequence)
     (send (send this get-editor) end-edit-sequence))
   (define/public (sync-to editor)
-    (let ([i (for/or ([i (in-vector (send this get-fringe))])
-               (and (eq? (send i user-data) editor) i))])
-      (when i (send this select i)))))
+    (define i (for/or ([i (in-vector (send this get-fringe))])
+                (and (eq? (send i user-data) editor) i)))
+    (when i (send this select i))))
 
 (define (update-content content frame toc-list interaction interaction-item
                         #:deleted [deleted '()])
@@ -693,18 +690,18 @@
       [(eq? mode 'interaction)
        (unless existing
          (send interaction set-path! path)
-         (let ([item (send toc-list add interaction)])
-           (set-box! interaction-item item)
-           (let ([sep (make-string 70 #\-)]
-                 [pos (send interaction get-end-position)])
-             (send interaction output (string-append sep "\n" text sep))
-             (queue-callback
-              (λ ()
-                (send interaction scroll-to-position pos)
-                (sleep/yield 0.25)
-                (send interaction scroll-to-position pos))
-              #f))
-           (send toc-list select item)))]
+         (define item (send toc-list add interaction))
+         (set-box! interaction-item item)
+         (define sep (make-string 70 #\-))
+         (define pos (send interaction get-end-position))
+         (send interaction output (string-append sep "\n" text sep))
+         (queue-callback
+          (λ ()
+            (send interaction scroll-to-position pos)
+            (sleep/yield 0.25)
+            (send interaction scroll-to-position pos))
+          #f)
+         (send toc-list select item))]
       ;; new file
       [(not existing)
        (send toc-list add
@@ -766,19 +763,19 @@
       (cond
         [(equal? this-handle cur) (void)]
         [windows?
-         (let ([title (GetWindowTitle cur)])
-           (if (equal? (GetWindowThreadProcessId cur) this-thread-id)
+         (define title (GetWindowTitle cur))
+         (if (equal? (GetWindowThreadProcessId cur) this-thread-id)
+           (queue-callback
+            (λ ()
+              ;; quietly, since this is probably all going to be harmless
+              (send this tell-server 'alert
+                    (format "Lost focus to: ~a, probably same process"
+                            title))))
+           (let ([fg? (SetForegroundWindow this-handle)])
              (queue-callback
               (λ ()
-                ;; quietly, since this is probably all going to be harmless
-                (send this tell-server 'alert
-                      (format "Lost focus to: ~a, probably same process"
-                              title))))
-             (let ([fg? (SetForegroundWindow this-handle)])
-               (queue-callback
-                (λ ()
-                  (send this alert "Lost focus to: ~a, ~a" title
-                        (if fg? "got it back" "failed to get it back!")))))))]
+                (send this alert "Lost focus to: ~a, ~a" title
+                      (if fg? "got it back" "failed to get it back!"))))))]
         [non-windows-alert?
          (set! non-windows-alert? #f)
          (send this tell-server
@@ -850,12 +847,12 @@
               ;; try to ask the server for a poll, ignore if we can't since a
               ;; poll will eventually be sent anyway
               (with-handlers ([exn? void])
-                (let*-values ([(i o) (ssl-connect server-name server-port)]
-                              [(->server) (make-writer o)])
-                  (->server 'tester-client-do-poll)
-                  (->server client-id)
-                  (close-input-port i)
-                  (close-output-port o)))]
+                (define-values [i o] (ssl-connect server-name server-port))
+                (define ->server (make-writer o))
+                (->server 'tester-client-do-poll)
+                (->server client-id)
+                (close-input-port i)
+                (close-output-port o))]
              [(cons 'get ch)
               (channel-put ch (reverse messages))
               (when (channel-get ch) (set! messages '()))]
@@ -885,17 +882,14 @@
                          (sleep 1)
                          (callback status* #f "[~a] Disconnected: ~a" i msg))
                        (communicator))])
-      (define-values [i o]
-        ;; note that this doesn't use a certificate, so it will connect to any
-        ;; server -- this shouldn't be a problem in this situation, since it
-        ;; would be visible that some machine is not connected, and the server
-        ;; is up in a very narrow time frame
-        (let-values ([(i o) (begin (callback status "Connecting...")
-                                   (ssl-connect server-name server-port))])
-          (callback status "Connected to server")
-          (set! close-ports
-                (λ () (close-input-port i) (close-output-port o)))
-          (values i o)))
+      ;; note that this doesn't use a certificate, so it will connect to any
+      ;; server -- this shouldn't be a problem in this situation, since it
+      ;; would be visible that some machine is not connected, and the server is
+      ;; up in a very narrow time frame
+      (callback status "Connecting...")
+      (define-values [i o] (ssl-connect server-name server-port))
+      (callback status "Connected to server")
+      (set! close-ports (λ () (close-input-port i) (close-output-port o)))
       (define ->server (make-writer o))
       (define server-> (make-reader i read-timeout))
       (define (die! from-server)
@@ -974,38 +968,38 @@
                     (die! "Restarting on server command...")]
           ['die (die! "Shutting down on server command...")]
           ['ping
-           (let* ([ping (server->)]
-                  [time (ping-time ping)]
-                  [diffs (ping-diffs ping)])
-             (when time (callback set-clock time))
-             (when (pair? diffs) (callback diff-content diffs)))
+           (define ping (server->))
+           (define time (ping-time ping))
+           (define diffs (ping-diffs ping))
+           (when time (callback set-clock time))
+           (when (pair? diffs) (callback diff-content diffs))
            (->server 'pong)
-           (let* ([uptime (- (current-inexact-milliseconds) start-time)]
-                  [mch (make-channel)]
-                  [dch (make-channel)]
-                  [messages (begin (thread-send teller-thread (cons 'get mch))
-                                   (channel-get mch))]
-                  [diff (begin (callback get-diffs dch) (channel-get dch))])
-             (define (ch-reply m d) (channel-put mch m) (channel-put dch d))
-             (define reply
-               (with-handlers ([exn? (λ (e) (ch-reply #f #f) (raise e))])
-                 (->server (make-pong uptime messages diff username password))
-                 (let ([r (server->)])
-                   (case r
-                     [(ok) (ch-reply #t #t)]
-                     ;; with a bad password the server shows messages, but
-                     ;; won't do our diffs
-                     [(bad-password) (ch-reply #t #f)]
-                     [else (error "bad server reply to pong message" r)])
-                   r)))
-             ;; show a new prompt only if we actually tried a user/pswd
-             (when (and username need-password?)
-               (if (eq? 'bad-password reply)
-                 (read-password "Bad password, try again")
-                 ;; login successful at this point, but no need for a message,
-                 ;; since we'll be sent a set-id+login message (actually, it
-                 ;; will turn `need-password?' off, so we'll never get here.)
-                 (set! need-password? #f))))]
+           (define uptime (- (current-inexact-milliseconds) start-time))
+           (define mch (make-channel)) (define dch (make-channel))
+           (thread-send teller-thread (cons 'get mch))
+           (define messages (channel-get mch))
+           (callback get-diffs dch)
+           (define diff (channel-get dch))
+           (define (ch-reply m d) (channel-put mch m) (channel-put dch d))
+           (define reply
+             (with-handlers ([exn? (λ (e) (ch-reply #f #f) (raise e))])
+               (->server (make-pong uptime messages diff username password))
+               (define r (server->))
+               (case r
+                 [(ok) (ch-reply #t #t)]
+                 ;; with a bad password the server shows messages, but
+                 ;; won't do our diffs
+                 [(bad-password) (ch-reply #t #f)]
+                 [else (error "bad server reply to pong message" r)])
+               r))
+           ;; show a new prompt only if we actually tried a user/pswd
+           (when (and username need-password?)
+             (if (eq? 'bad-password reply)
+               (read-password "Bad password, try again")
+               ;; login successful at this point, but no need for a message,
+               ;; since we'll be sent a set-id+login message (actually, it will
+               ;; turn `need-password?' off, so we'll never get here.)
+               (set! need-password? #f)))]
           [(? eof-object?)
            (if quit-on-hangup (die! #f) (error "Lost server connection"))]
           [msg (error (format "Unknown server message: ~e" msg))])
@@ -1115,7 +1109,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define/override (get-entire-label) "Tester")
   ;; use my stuff
   (define/override (get-editor%)
-    (let ([f this]) (class interaction-text% (super-new [frame f]))))
+    (define f this) (class interaction-text% (super-new [frame f])))
   (define/override (get-canvas%) canvas:info%)
   ;; readable font & customizations
   (define current-font-size default-font-size)
@@ -1164,8 +1158,8 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define/public (focus-next)
     (if (send toc-list has-focus?) (focus-editor) (focus-toc)))
   (define (call-preserving-focus thunk)
-    (let ([cur (send this get-focus-window)])
-      (if cur (begin0 (thunk) (send cur focus)) (thunk))))
+    (define cur (send this get-focus-window))
+    (if cur (begin0 (thunk) (send cur focus)) (thunk)))
   (define/public (jump-to-prev) (send toc-list jump-to-prev))
   (define/public (jump-to-next) (send toc-list jump-to-next))
   (define editor-history '())
@@ -1174,9 +1168,9 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
       (set! editor-history (cons editor (remq editor editor-history)))))
   (define/public (cycle-to n)
     (when (<= n (length editor-history))
-      (let ([editor (list-ref editor-history n)])
-        (send toc-list sync-to editor)
-        (switch-to-editor editor))))
+      (define editor (list-ref editor-history n))
+      (send toc-list sync-to editor)
+      (switch-to-editor editor)))
   ;; hack: scroll the toc if the mouse is in it
   (define/public (do-wheel-scroll e)
     (let ([x  (send e get-x)]
@@ -1192,22 +1186,22 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define interaction-item (box #f))
   (define/override (get-editor) (or current-editor (super get-editor)))
   (define/public (switch-to-interaction)
-    (let ([item (unbox interaction-item)])
-      (if item
-        (send toc-list select item)
-        ;; we didn't see it, so nothing to leave selected in the toc-list
-        (begin (send toc-list unselect)
-               (switch-to-editor interaction-editor)))))
+    (define item (unbox interaction-item))
+    (if item
+      (send toc-list select item)
+      ;; we didn't see it, so nothing to leave selected in the toc-list
+      (begin (send toc-list unselect)
+             (switch-to-editor interaction-editor))))
   ;; convenience to make editors that can be switched to
   (define-syntax-rule (make-switcher make-editor-expr)
     (let ([editor #f] [pre-item #f] [pre-editor #f])
       (define (switch-to)
-        (let ([prev-editor (get-editor)])
-          (unless (eq? prev-editor editor)
-            (set! pre-editor prev-editor)
-            (set! pre-item (send toc-list get-selected))
-            (send toc-list unselect)
-            (switch-to-editor editor))))
+        (define prev-editor (get-editor))
+        (unless (eq? prev-editor editor)
+          (set! pre-editor prev-editor)
+          (set! pre-item (send toc-list get-selected))
+          (send toc-list unselect)
+          (switch-to-editor editor)))
       (define (switch-back)
         (when (and (eq? (get-editor) editor) pre-editor)
           (when pre-item (send toc-list select pre-item))
@@ -1229,15 +1223,15 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
     (make-switcher (new fixed-text% [path '()] [frame this])))
   (define/public (show-blank blank?) (blank-switcher (if blank? 'show 'hide)))
   (define/public (switch-to-editor editor)
-    (let ([prev-editor (get-editor)]
-          [canvas (send this get-canvas)])
-      (send* prev-editor (save-position) (lock #t)) ; save pos, stop coloring
-      (send canvas set-editor editor)
-      (send* editor (lock #f) (restore-position)) ; restore pos, allow coloring
-      (set! current-editor editor)
-      (add-to-history editor)
-      ;; need to switch focus for update-info to work
-      (call-preserving-focus (λ () (focus-editor) (send this update-info)))))
+    (define prev-editor (get-editor))
+    (define canvas (send this get-canvas))
+    (send* prev-editor (save-position) (lock #t)) ; save pos, stop coloring
+    (send canvas set-editor editor)
+    (send* editor (lock #f) (restore-position)) ; restore pos, allow coloring
+    (set! current-editor editor)
+    (add-to-history editor)
+    ;; need to switch focus for update-info to work
+    (call-preserving-focus (λ () (focus-editor) (send this update-info))))
   (define/public (delete-editables)
     (send toc-list delete-editables))
   ;; getting content from the server
@@ -1246,11 +1240,11 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
                     #:deleted deleted))
   (define/public (set-content content) (update-content* content))
   (define/public (diff-content diff)
-    (let-values ([(deleted new)
-                  (partition (λ (x) (eq? 'deleted (car x))) diff)])
-      ;; treat added and changed files the same, `update-content' will notice
-      ;; no-changes anyway
-      (update-content* (map cdr new) (map cadr deleted))))
+    (define-values [deleted new]
+      (partition (λ (x) (eq? 'deleted (car x))) diff))
+    ;; treat added and changed files the same, `update-content' will notice
+    ;; no-changes anyway
+    (update-content* (map cdr new) (map cadr deleted)))
   ;; sending content to the server
   (define modified-editors '())
   (define/public (add-to-diff e)
@@ -1267,19 +1261,19 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   (define status-message #f)
   (define clock-message  #f)
   (define (make-status-messages)
-    (let* ([info (send this get-info-panel)]
-           [msg (new message% [parent info] [label "Initializing..."]
+    (define info (send this get-info-panel))
+    (define msg (new message% [parent info] [label "Initializing..."]
                      [font (spec->font message-font)]
-                     [stretchable-width #t])]
-           [clk (and show-clock? (new message% [parent info] [label "??:?? "]
-                                      [font (spec->font clock-font)]))])
-      (send info change-children
-            (λ (l)
-              (let* ([l (remq* (list msg clk) l)]
-                     [l (if clk (cons clk l) l)])
-                (cons msg l))))
-      (set! status-message msg)
-      (set! clock-message clk)))
+                     [stretchable-width #t]))
+    (define clk (and show-clock? (new message% [parent info] [label "??:?? "]
+                                      [font (spec->font clock-font)])))
+    (send info change-children
+          (λ (l)
+            (let* ([l (remq* (list msg clk) l)]
+                   [l (if clk (cons clk l) l)])
+              (cons msg l))))
+    (set! status-message msg)
+    (set! clock-message clk))
   (define/public (set-clock str)
     (when clock-message (send clock-message set-label str)))
   ;; interaction and messages
@@ -1323,9 +1317,9 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
     (status* 'message "~a" str)
     (unless (eq? interaction-editor (get-editor))
       (thread (λ ()
-                (let ([hi 0.1])
-                  (for ([i (in-range 0.0 hi 0.01)])
-                    (sleep i) (show "") (sleep (- hi i)) (show str*)))))))
+                (define hi 0.1)
+                (for ([i (in-range 0.0 hi 0.01)])
+                  (sleep i) (show "") (sleep (- hi i)) (show str*))))))
   ;;
   (define/override (start)
     (set! interaction-editor (get-editor))
