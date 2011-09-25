@@ -1339,7 +1339,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
                 ;; needed with the protection we get from WinLock
                 no-caption no-resize-border
                 hide-menu-bar no-system-menu)]))
-    (begin (super-new) (send this maximize #t))))
+    (begin (super-new) (queue-callback (λ () (send this maximize #t))))))
 
 ;; ----------------------------------------------------------------------------
 
