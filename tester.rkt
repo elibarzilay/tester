@@ -721,9 +721,6 @@
 
 ;; ----------------------------------------------------------------------------
 
-(define horizontal-drag%
-  (panel:horizontal-dragable-mixin (panel:dragable-mixin horizontal-panel%)))
-
 (defclass (startable-mixin %) < %
   (define/public (start)
     (dprintf "Initializing kernel services\n")
@@ -1153,12 +1150,12 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
   ;;
   (define toc-list #f)
   (define/override (make-root-area-container % parent)
-    (let* ([s-root (super make-root-area-container horizontal-drag% parent)]
-           [r-root (make-object % s-root)])
-      (set! toc-list
-            (new toc-list% [parent s-root] [stretchable-width #f]))
-      (send s-root set-percentages '(5/6 1/6))
-      r-root))
+    (define s-root
+      (super make-root-area-container panel:horizontal-dragable% parent))
+    (define r-root (make-object % s-root))
+    (set! toc-list (new toc-list% [parent s-root] [stretchable-width #f]))
+    (send s-root set-percentages '(5/6 1/6))
+    r-root)
   ;;
   ;; focus & navigation
   (define/public (focus-editor) (send (send this get-canvas) focus))
