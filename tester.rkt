@@ -8,6 +8,7 @@
 
 (define (dprintf fmt . args)
   (apply printf fmt args)
+  (flush-output)
   (when app-locked? (sleep (* (random) 0.4))))
 
 (defines-from-options
@@ -67,19 +68,19 @@
          (get-ffi-obj 'name lib (_fun type ...)) void))]))
 
 (defwin GetFocus             [-> _int32])
-(defwin GetForegroundWindow  [-> _int32])
-(defwin GetWindowTextLengthA [_int32 -> _int])
-(defwin GetWindowTextA       [_int32 _bytes _int -> _int])
-(defwin GetParent            [_int32 -> _int32])
-(defwin GetWindowThreadProcessId [_int32 [_int32 = 0] -> _int32])
-(defwin SetForegroundWindow  [_int32 -> _bool])
+(defwin GetForegroundWindow  [-> _pointer])
+(defwin GetWindowTextLengthA [_pointer -> _int])
+(defwin GetWindowTextA       [_pointer _bytes _int -> _int])
+(defwin GetParent            [_pointer -> _pointer])
+(defwin GetWindowThreadProcessId [_pointer [_int32 = 0] -> _int32])
+(defwin SetForegroundWindow  [_pointer -> _bool])
 (defwin GetLastError         [-> _int32])
 (define (GetWindowTitle hwnd)
-  (let* ([len (GetWindowTextLengthA hwnd)]
-         [buf (and (len . > . 0) (make-bytes (add1 len)))])
-    (if buf
+  (define len (GetWindowTextLengthA hwnd))
+  (define buf (and (len . > . 0) (make-bytes (add1 len))))
+  (if buf
       (begin (GetWindowTextA hwnd buf (add1 len)) (subbytes buf 0 len))
-      "<unknown-title>")))
+      "<unknown-title>"))
 
 ;; http://www.codeproject.com/KB/winsdk/AntonioWinLock.aspx
 (define winlock (and app-locked? windows? (ffi-lib "WinLockDll.dll")))
