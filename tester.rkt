@@ -774,7 +774,7 @@
            (let ([fg? (SetForegroundWindow this-handle)])
              (queue-callback
               (λ ()
-                (send this alert "Lost focus to: ~a, ~a" title
+                (send this alert "Lost focus to: ~s, ~a" title
                       (if fg? "got it back" "failed to get it back!"))))))]
         [non-windows-alert?
          (set! non-windows-alert? #f)
