@@ -1167,7 +1167,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
     (when (send editor include-in-history?)
       (set! editor-history (cons editor (remq editor editor-history)))))
   (define/public (cycle-to n)
-    (when (<= n (length editor-history))
+    (when (< n (length editor-history))
       (define editor (list-ref editor-history n))
       (send toc-list sync-to editor)
       (switch-to-editor editor)))
