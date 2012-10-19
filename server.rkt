@@ -269,6 +269,8 @@ done
           [else (let ([preds (map prefix->pred accept-ips)])
                   (λ (ip) (ormap (λ (p) (p ip)) preds)))])))
 
+(define top-custodian (current-custodian))
+
 (define (run-client i o)
   (define (error* fmt . args) (raise-user-error (apply format fmt args)))
   (define ->client (make-writer o))
@@ -318,7 +320,8 @@ done
       (hash-remove! clients id)
       (set! cached-all-clients #f))
     (close-input-port i) (close-output-port o)
-    (kill-thread (current-thread)))
+    (parameterize ([current-custodian top-custodian])
+      (kill-thread (current-thread))))
   (define (send/ok msg . args)
     (->client msg)
     (for ([arg (in-list args)]) (->client arg))

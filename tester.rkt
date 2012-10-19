@@ -1091,7 +1091,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
           #t]
          ;; these are on the menus, but do them here too, so they can be used
          ;; if the application was unlocked (since the menu items will not
-         ;; re-appear (I'm too lazy to do that))
+         ;; re-appear (actually they do, but be safe))
          [(#\w #\q)
           (when (send this can-close?) (send this on-close))
           #t]
