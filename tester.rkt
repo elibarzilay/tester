@@ -223,7 +223,7 @@
    frame
    [path     #f] ; the path of this file (list of strings)
    [text     #f] ; the initial text for this (set to #f after initialization)
-   [mode  'text] ; editing mode: 'scheme or 'text
+   [mode  'text] ; editing mode: 'racket or 'text
    [edit?    #f] ; is this text editable?
    [local?   #f] ; is this a local user file? (#f means the server's default)
    [seen?    #f] ; was this text ever seen?
@@ -357,12 +357,12 @@
       (scroll-to-position (caddr p) #f (cadddr p) 'start)
       ;; make the end visible if it was visible
       (when (car (cddddr p)) (set-pos #t))))
-  ;; initialization: set text, mode (the default is scheme mode), undo
+  ;; initialization: set text, mode (the default is racket mode), undo
   (when text (set-all-text text))
   (send this set-surrogate
         (case mode
           [(text) #f]
-          [(scheme) (new scheme:text-mode%)]
+          [(racket scheme) (new racket:text-mode%)]
           [else (error 'tester-text% "bad mode: ~e" mode)]))
   (when edit? (send this set-max-undo-history 'forever))
   (refresh-label-color))
@@ -1305,7 +1305,7 @@ code, and other keys like Alt+( to insert balanced parentheses, etc.
            [args  (if type? (cdr args) args)]
            [msg   (apply format fmt args)])
       (when type (send this tell-server type msg))
-      (fprintf (current-error-port) "alert: ~a\n" msg)
+      (eprintf "alert: ~a\n" msg)
       (send interaction-editor output msg alert-color)
       (status* #f "*** ~a ***" msg)))
   (define/public (flashing-message fmt . args)
