@@ -1,6 +1,6 @@
 #!/bin/sh
 #| -*- scheme -*-
-eval "`$(dirname "$0")/../../utils/sh-init`"
+eval "$($(dirname "$0")/../../utils/sh-init)"
 
 while true; do
   echo ">>> Starting server..."
