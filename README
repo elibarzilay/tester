@@ -296,19 +296,18 @@ Running the Server and the Clients
     make-netboot
 
   at the server prompt, and the file will be created (in the working
-  directory).  The file can be a Racket file to be run with `GRacket' or
-  `gracket-text', or a batch file that will extract and run the Racket
-  file.  Creating a batch file is more convenient because it leaves you
-  with less actions to perform on each machine (this can be important if
-  you have a lab of 50 machines -- you won't want to leave a machine
-  without the client running, since that can be used by students).  See
-  the configuration section for more details on how to configure the
-  kind of netboot file that is generated.
+  directory).  The file can be a Racket file to be run with `racket', or
+  a batch file that will extract and run the Racket file.  Creating a
+  batch file is more convenient because it leaves you with less actions
+  to perform on each machine (this can be important if you have a lab of
+  50 machines -- you won't want to leave a machine without the client
+  running, since that can be used by students).  See the configuration
+  section for more details on how to configure the kind of netboot file
+  that is generated.
 
 * After you copy "netboot.rkt" to the client, you can run it with either
-  the `GRacket' or `gracket-text' executables.  It will create a new
-  directory, contact the server and retrieve the client source files,
-  then run the client.
+  the `Racket' executable.  It will create a new directory, contact the
+  server and retrieve the client source files, then run the client.
 
 * From this point on, clients are active and can be used to read the
   material and write answers (after logging in, if required by the
@@ -453,9 +452,8 @@ almost certainly need to modify.
   > file: the netboot file name that the server will create for you when
     you use the `make-netboot' command.  The suffix of this file
     determines the kind of netboot that is generated -- either a Racket
-    file (to be run with `GRacket' or `gracket-text') or a batch file
-    (which will extract and run the Racket netboot file, possibly in a
-    loop).
+    file or a batch file (which will extract and run the Racket netboot
+    file, possibly in a loop).
 
   - client-dir: when the netboot script runs, it will contact the server
     to get the client source files, and put them in this directory

@@ -684,9 +684,9 @@ done
   (defines-from-options
     [netboot file client-dir racket-path batch-prefix batch-loop?])
   (define (echo-quote s) (regexp-replace* #rx"[ <>|\"^]" s "^\\0"))
-  (define gracket-paths
+  (define racket-paths
     (for/list ([p (if (list? racket-path) racket-path (list racket-path))])
-      (let* ([p (string-append p "/gracket-text.exe")]
+      (let* ([p (string-append p "/racket.exe")]
              [p (regexp-replace* #rx"/" p "\\\\")])
         p)))
   (define text
@@ -726,9 +726,9 @@ done
                                 ("  \"~a\" \"~a\"" ,p ,racket-file)
                                 ("  goto EXECDONE")
                                 (":~a" ,label)))
-                            gracket-paths)
-              "  echo ERROR: No gracket-text.exe executable found, tried:"
-              ,@(map (λ (p) `("  echo ... ~a" ,(echo-quote p))) gracket-paths)
+                            racket-paths)
+              "  echo ERROR: No racket.exe executable found, tried:"
+              ,@(map (λ (p) `("  echo ... ~a" ,(echo-quote p))) racket-paths)
               ":EXECDONE"
               ""
               "sleep 1"

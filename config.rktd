@@ -29,9 +29,9 @@
   [backup-command ("cp" "-al")]
   ]
  [netboot
-  ;; the netboot file to create -- it can be a racket file to be run with
-  ;; `GRacket' or `gracket-text', or a batch file which will create such a
-  ;; racket file and run it.  (Determined by the suffix of this name.)
+  ;; the netboot file to create -- it can be a racket file or a batch file
+  ;; which will create such a racket file and run it.  (Determined by the
+  ;; suffix of this name.)
   [file "netboot.rkt"]
   ;; when the netboot file runs, it will contact the server to get the client
   ;; source files -- these will be put in the following directory
