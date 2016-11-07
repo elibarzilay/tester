@@ -339,8 +339,13 @@ almost certainly need to modify.
     (eg, the default "." will make it use the directory the server
     process was run from).
 
- >> server-name, server port: the name of the server machine, and the
+ >> server-name, server-port: the name of the server machine, and the
     port number to listen at.
+
+ >> client-port: the client connects to the server via `server-port'
+    unless this is specified as non-#f, in which case it will use it.
+    This can be useful in case the server is listening on a private port
+    which is forwarded to from a public one.
 
  >> master-password: the md5 sum of the master password.  This password
     can be used to unlock a client (hit ctrl+shift+P, then the password

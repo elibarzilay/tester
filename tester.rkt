@@ -12,7 +12,7 @@
   (when app-locked? (sleep (* (random) 0.4))))
 
 (defines-from-options
-  server-name server-port
+  server-name server-port client-port
   [client app-locked? read-timeout id-file-directories ask-for-client-id?
           show-clock? buffer-limit default-font-size
           min-font-size max-font-size message-font clock-font toc-item-style
@@ -847,7 +847,8 @@
               ;; try to ask the server for a poll, ignore if we can't since a
               ;; poll will eventually be sent anyway
               (with-handlers ([exn? void])
-                (define-values [i o] (ssl-connect server-name server-port))
+                (define-values [i o]
+                  (ssl-connect server-name (or client-port server-port)))
                 (define ->server (make-writer o))
                 (->server 'tester-client-do-poll)
                 (->server client-id)
@@ -887,7 +888,8 @@
       ;; would be visible that some machine is not connected, and the server is
       ;; up in a very narrow time frame
       (callback status "Connecting...")
-      (define-values [i o] (ssl-connect server-name server-port))
+      (define-values [i o]
+        (ssl-connect server-name (or client-port server-port)))
       (callback status "Connected to server")
       (set! close-ports (λ () (close-input-port i) (close-output-port o)))
       (define ->server (make-writer o))

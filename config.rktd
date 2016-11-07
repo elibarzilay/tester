@@ -1,6 +1,7 @@
 ([workdir "."] ; can be relative to the directory where it is started
  [server-name "something.somewhere.edu"]
  [server-port 8888]
+ [client-port #f] ; makes it possible to pipe through a different port
  [master-password #"????????????????????????????????"]
  [server
   [poll-frequency 5] ; poll/update clients approximately every N seconds
