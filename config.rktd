@@ -38,7 +38,7 @@
   ;; source files -- these will be put in the following directory
   [client-dir "tester"]
   ;; the first file is the one that should be executed
-  [client-files ("tester.rkt" "shared.rkt" "WinLockDll.dll")]
+  [client-files ("tester.rkt" "shared.rkt")]
   ;; the options below apply only for a batch file
   [racket-path "C:\\Program Files\\Racket"] ; path/s of Racket dir/s to use
   [batch-prefix '()] ; a list of batch lines to put at the beginning

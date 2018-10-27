@@ -83,34 +83,6 @@
       "<unknown-title>"))
 
 ;; http://www.codeproject.com/KB/winsdk/AntonioWinLock.aspx
-(define winlock (and app-locked? windows? (ffi-lib "WinLockDll.dll")))
-(define-syntax-rule (defwinlock name [type ...])
-  (begin (defwin name winlock [type ...])
-         (add-locker (λ (locked?) (name (not locked?))))))
-;; This one is problematic
-;; (defwinlock Desktop_Show_Hide            [_bool -> _void])
-(defwinlock StartButton_Show_Hide        [_bool -> _void])
-(defwinlock Taskbar_Show_Hide            [_bool -> _void])
-(defwinlock Clock_Show_Hide              [_bool -> _void])
-(defwinlock Keys_Enable_Disable          [_bool -> _void])
-(defwinlock AltTab1_Enable_Disable       [_bool -> _void])
-(defwinlock AltTab2_Enable_Disable       [[_int32 = 0] _bool -> _void])
-(defwinlock TaskSwitching_Enable_Disable [_bool -> _void])
-(defwinlock TaskManager_Enable_Disable   [_bool -> _void])
-(defwinlock CtrlAltDel_Enable_Disable    [_bool -> _void])
-;; (defwin Process_Desktop winlock [_string _path -> _void])
-
-;; Hack a "show desktop" function
-;; (but don't use it, it tends to make a mess)
-;; (define (ToggleDesktop)
-;;   (define file (make-temporary-file "~a.scf"))
-;;   (call-with-output-file file #:exists 'truncate
-;;     (λ (o)
-;;       (display #"[Shell]\r\nCommand = 2\r\nIconFile=explorer.exe,3\r\n" o)
-;;       (display #"[Taskbar]\r\nCommand = ToggleDesktop\r\n" o)))
-;;   (shell-execute #f (path->string file) "" (current-directory) 'sw_hide)
-;;   (sleep 0.5) ; let it do its work
-;;   (delete-file file))
 
 ;; Disable the screen saver
 (defwin SystemParametersInfoA [[uiAction : _uint]
