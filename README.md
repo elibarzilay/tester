@@ -220,7 +220,7 @@ while being convenient to use.
     etc.  Use subdirectories to organize this content, since the clients
     will show that as a hierarchical list.  The `config.rktd` file has
     an entry to specify which files are editable, which files are
-    presented in Scheme mode (with syntax-based highlighting), the order
+    presented in Racket mode (with syntax-based highlighting), the order
     that files are listed, and more.  Also note that this content can be
     updated while the exam is running: you can edit existing files (eg,
     when you find a typo), or add new files (like adding notes, hints,
@@ -589,8 +589,8 @@ will almost certainly need to modify.
     one editable file --- for example, you can have a separate file for
     each question.
 
-  - `mode`: determines the mode of files.  Can be `text` or `scheme` for
-    text and files (scheme mode makes a buffer similar to DrRacket's
+  - `mode`: determines the mode of files.  Can be `text` or `racket` for
+    text and files (racket mode makes a buffer similar to DrRacket's
     definitions window).
 
     It can also be `interaction` for the messages file: this is a

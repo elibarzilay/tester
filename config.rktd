@@ -101,7 +101,7 @@
     keep-1st-line #rx"^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] "]
    [(* #rx"[.]rkt$")
     order +1
-    mode scheme
+    mode racket
     keep-1st-line #rx"^ *#lang "]
    ;; default for all files
    [(*)
@@ -118,7 +118,7 @@
 ;; <font>     ::= (<size> <family> <style> <weight>)
 ;; <style>    ::= (<#f|size> <#f|family> <#f|style> <#f|weight> <#f|bgcolor>)
 ;; <ignore>   ::= <boolean>           ; default=#f
-;; <mode>     ::= text | scheme | interaction
+;; <mode>     ::= text | racket | interaction
 ;; <editable> ::= <boolean>
 ;; <order>    ::= <integer>           ; default=0, use to bring entries up/down
 ;; <keep1st>  ::= <regexp>            ; determines if 1st line is always shown

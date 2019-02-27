@@ -993,7 +993,7 @@ there is no "save" or "submit" button: the text is synchronized to the
 server every few seconds.  Colors highlight editable files that you did
 not touch, files that were not synchronized yet, and read-only files
 that you did not see or that were updated on the server.  Editable files
-can be in either scheme mode or text mode.
+can be in either racket mode or text mode.
 
 From time to time you may see messages appearing at the bottom, these
 are logged in the startup interactions screen so you don't lose them.
